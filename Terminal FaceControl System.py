@@ -2,12 +2,27 @@ import sqlite3
 import datetime
 import os
 import time
+import logging
 from colorama import init, Fore, Style
 from prettytable import PrettyTable
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+log_path = os.path.join(script_dir, 'security.log')
+db_path = os.path.join(script_dir, 'guests.db')
+
+logging.basicConfig(
+    filename=log_path,
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    encoding='utf-8',
+    force=True  
+)
+
+logging.info("Программа запущена")
+
 init(autoreset=True)
 
-connection = sqlite3.connect('guests.db')
+connection = sqlite3.connect(db_path)
 cursor = connection.cursor()
 
 cursor.execute('''
@@ -54,7 +69,7 @@ for row in rows:
 rejected = 0
 
 while True:
-    os.system('cls')
+    os.system('cls' if os.name == 'nt' else 'clear')
     age = ask_int(Fore.WHITE + "Возраст (0 для выхода): ")
 
     if age < 0:
@@ -81,12 +96,20 @@ while True:
         time.sleep(1) 
         name = input(Fore.WHITE + "Как вас зовут? ").strip()
 
+        if name.lower() in ["валера", 'valera']:
+            print(Fore.RED + "Тревога! Валерам вход воспрещен!")
+            logging.warning(f"ПОПЫТКА ВХОДА: Запрещенное имя 'Валера'. Параметры: возраст {age}, рост {height}")
+            time.sleep(2)
+            continue
+
         now = datetime.datetime.now().strftime("%H:%M:%S") 
 
         if not name:
             print(Fore.RED + "Имя не может быть пустым.")
             time.sleep(2) 
             continue
+
+        logging.info(f"УСПЕХ: Гость {name} (возраст {age}, рост {height}) допущен.")
 
         guest_card = {
             "имя": name,
@@ -105,6 +128,7 @@ while True:
         time.sleep(2)
     else:
         print(Fore.RED + "Извини, ты не подходишь по критериям.")
+        logging.info(f"ОТКАЗ: Несоответствие критериям. Возраст: {age}, Рост: {height}")
         time.sleep(2)
         rejected += 1
 
