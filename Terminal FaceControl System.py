@@ -54,6 +54,8 @@ def ask_float(message):
 
 passed_guests = []
 
+BANNED_NAMES = ["валера", "valera"]
+
 cursor.execute('SELECT name, age, height, visit_time FROM guests')
 rows = cursor.fetchall()
 
@@ -77,6 +79,11 @@ while True:
         time.sleep(2) 
         continue
 
+    if age > 120:
+        print("Слишком большой возраст.")
+        time.sleep(1)
+        continue
+    
     if age == 0:
         print(Fore.CYAN +"Завершение работы...")
         break
@@ -88,6 +95,11 @@ while True:
         time.sleep(2) 
         continue
 
+    if height > 250:
+        print("Слишком большой рост.")
+        time.sleep(1)
+        continue
+
     print(Fore.YELLOW + "⏳ Проверка по базе данных...")
     time.sleep(1.5) 
 
@@ -96,16 +108,19 @@ while True:
         time.sleep(1) 
         name = input(Fore.WHITE + "Как вас зовут? ").strip()
 
-        if name.lower() in ["валера", 'valera']:
+        if name.lower() in BANNED_NAMES:
             print(Fore.RED + "Тревога! Валерам вход воспрещен!")
             logging.warning(f"ПОПЫТКА ВХОДА: Запрещенное имя 'Валера'. Параметры: возраст {age}, рост {height}")
+            rejected += 1
             time.sleep(2)
             continue
 
-        now = datetime.datetime.now().strftime("%H:%M:%S") 
+        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         if not name:
             print(Fore.RED + "Имя не может быть пустым.")
+            rejected += 1
+            logging.warning(f"ОТКАЗ: Пустое имя. Возраст: {age}, Рост: {height}")
             time.sleep(2) 
             continue
 
@@ -142,7 +157,10 @@ table.field_names = ["Имя", "Возраст", "Рост", "Время виз�
 for guest in passed_guests:
     table.add_row([guest["имя"], guest["возраст"], guest["рост"], guest["время"]])
 
-print(Fore.CYAN + str(table))
+if passed_guests:
+    print(Fore.CYAN + str(table))
+else:
+    print("Прошедших гостей нет.")
 
 print(Fore.RED + f"\nОтклоненные: {rejected}")
 
